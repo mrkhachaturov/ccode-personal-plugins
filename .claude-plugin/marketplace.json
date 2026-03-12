@@ -731,6 +731,16 @@
         "sha": "0714280351c1a137e79aad465a66730511ffbd57"
       },
       "homepage": "https://learning.postman.com/docs/developer/postman-mcp-server/"
+    },
+    {
+      "name": "claude-audit",
+      "description": "AI-readiness audit for any Claude Code project. Analyzes CLAUDE.md, hooks, skills, agents, and MCP setup — produces a structured improvement report with prioritized actions.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/mrkhachaturov/claude-audit-plugin.git"
+      },
+      "homepage": "https://github.com/mrkhachaturov/claude-audit-plugin"
     }
   ]
 }
