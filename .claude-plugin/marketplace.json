@@ -1,10 +1,10 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-plugins",
+  "name": "ccode-personal-plugins",
   "description": "Directory of popular Claude Code extensions including development tools, productivity plugins, and MCP integrations",
   "owner": {
-    "name": "Anthropic",
-    "email": "support@anthropic.com"
+    "name": "Ruben Khachaturov",
+    "email": "mr.kha4a2rov@protonmail.com"
   },
   "plugins": [
     {
