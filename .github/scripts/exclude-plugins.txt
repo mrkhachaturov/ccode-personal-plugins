@@ -1,0 +1,2 @@
+# Plugins to exclude from upstream (one per line)
+# Lines starting with # are ignored
