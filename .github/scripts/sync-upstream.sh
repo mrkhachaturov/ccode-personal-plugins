@@ -57,6 +57,27 @@ jq -s --argjson excluded "$EXCLUDE_JSON" '
 # Replace marketplace.json
 cp /tmp/merged-marketplace.json "$MARKETPLACE_FILE"
 
+# Sync plugin folders from upstream, excluding plugins in exclude list
+echo "Syncing plugin folders..."
+for dir in plugins external_plugins; do
+  # Remove current folder and checkout fresh from upstream
+  rm -rf "${REPO_ROOT:?}/${dir}"
+  git checkout "${UPSTREAM_REMOTE}/main" -- "${dir}" 2>/dev/null || true
+done
+
+# Remove excluded plugin folders
+if [[ -f "$EXCLUDE_FILE" ]]; then
+  while IFS= read -r name; do
+    [[ -z "$name" || "$name" == \#* ]] && continue
+    for dir in plugins external_plugins; do
+      if [[ -d "${REPO_ROOT}/${dir}/${name}" ]]; then
+        echo "Excluding ${dir}/${name}"
+        rm -rf "${REPO_ROOT}/${dir}/${name}"
+      fi
+    done
+  done < "$EXCLUDE_FILE"
+fi
+
 # Clean up
 rm -f /tmp/upstream-marketplace.json /tmp/merged-marketplace.json
 
