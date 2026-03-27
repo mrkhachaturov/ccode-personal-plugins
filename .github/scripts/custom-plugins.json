@@ -16,6 +16,16 @@
         "url": "https://github.com/mrkhachaturov/claude-audit-plugin.git"
       },
       "homepage": "https://github.com/mrkhachaturov/claude-audit-plugin"
+    },
+    {
+      "name": "rkstack",
+      "description": "AI development workflow: 21 skills for brainstorming, planning, TDD, debugging, code review, security audit, safety guardrails. One plugin, adapts to your project.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/mrkhachaturov/rkstack.git"
+      },
+      "homepage": "https://github.com/mrkhachaturov/rkstack"
     }
   ]
 }
