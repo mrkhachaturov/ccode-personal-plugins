@@ -44,6 +44,7 @@ Our own plugins are registered in `custom-plugins.json` and point to external re
 | Plugin | Repo | Purpose |
 |--------|------|---------|
 | `claude-audit` | [mrkhachaturov/claude-audit-plugin](https://github.com/mrkhachaturov/claude-audit-plugin) | AI-readiness audit for Claude Code projects |
+| `hindclaw-claude-plugin` | [mrkhachaturov/hindclaw-claude-plugin](https://github.com/mrkhachaturov/hindclaw-claude-plugin) | Long-term memory via Hindsight + HindClaw access control |
 
 ### rkstack integration (planned)
 

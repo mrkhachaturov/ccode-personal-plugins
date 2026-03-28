@@ -26,6 +26,16 @@
         "url": "https://github.com/mrkhachaturov/rkstack.git"
       },
       "homepage": "https://github.com/mrkhachaturov/rkstack"
+    },
+    {
+      "name": "hindclaw-claude-plugin",
+      "description": "Long-term memory for Claude Code via Hindsight with HindClaw server-side access control. Auto-recall on every prompt, auto-retain after responses, bank creation from templates.",
+      "category": "productivity",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/mrkhachaturov/hindclaw-claude-plugin.git"
+      },
+      "homepage": "https://hindclaw.pro"
     }
   ]
 }
