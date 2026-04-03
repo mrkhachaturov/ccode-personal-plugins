@@ -1201,6 +1201,17 @@
       "homepage": "https://github.com/slackapi/slack-mcp-plugin/tree/main"
     },
     {
+      "name": "sonarqube-agent-plugins",
+      "description": "Integrate SonarQube code quality and security analysis into Claude Code: namespaced slash commands, a guided skill to setup the SonarQube CLI, and a startup check for CLI wiring. MCP server registration and secrets-scanning hooks are installed by the SonarQube CLI as part of setup.",
+      "category": "security",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/SonarSource/sonarqube-agent-plugins.git",
+        "sha": "0cae644cee9318e6245b62ca779abdc60e6daa49"
+      },
+      "homepage": "https://github.com/SonarSource/sonarqube-agent-plugins"
+    },
+    {
       "name": "sonatype-guide",
       "description": "Sonatype Guide MCP server for software supply chain intelligence and dependency security. Analyze dependencies for vulnerabilities, get secure version recommendations, and check component quality metrics.",
       "category": "security",
@@ -1433,17 +1444,6 @@
       "homepage": "https://github.com/zapier/zapier-mcp/tree/main/plugins/zapier"
     },
     {
-      "name": "zoominfo",
-      "description": "Search companies and contacts, enrich leads, find lookalikes, and get AI-ranked contact recommendations. Pre-built skills chain multiple ZoomInfo tools into complete B2B sales workflows.",
-      "category": "productivity",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/Zoominfo/zoominfo-mcp-plugin.git",
-        "sha": "0705316ef8a2d0c64f81e50d4612ccc6a74edf03"
-      },
-      "homepage": "https://zoominfo.com"
-    },
-    {
       "name": "claude-audit",
       "description": "AI-readiness audit for any Claude Code project. Analyzes CLAUDE.md, hooks, skills, agents, and MCP setup — produces a structured improvement report with prioritized actions.",
       "category": "development",
@@ -1454,12 +1454,14 @@
       "homepage": "https://github.com/mrkhachaturov/claude-audit-plugin"
     },
     {
-      "name": "openai-codex",
+      "name": "codex",
       "description": "Use Codex from Claude Code to review code or delegate tasks.",
       "category": "development",
       "source": {
-        "source": "url",
-        "url": "https://github.com/openai/codex-plugin-cc.git"
+        "source": "git-subdir",
+        "url": "https://github.com/openai/codex-plugin-cc.git",
+        "path": "plugins/codex",
+        "ref": "main"
       },
       "homepage": "https://github.com/openai/codex-plugin-cc"
     },

@@ -18,12 +18,14 @@
       "homepage": "https://github.com/mrkhachaturov/claude-audit-plugin"
     },
     {
-      "name": "openai-codex",
+      "name": "codex",
       "description": "Use Codex from Claude Code to review code or delegate tasks.",
       "category": "development",
       "source": {
-        "source": "url",
-        "url": "https://github.com/openai/codex-plugin-cc.git"
+        "source": "git-subdir",
+        "url": "https://github.com/openai/codex-plugin-cc.git",
+        "path": "plugins/codex",
+        "ref": "main"
       },
       "homepage": "https://github.com/openai/codex-plugin-cc"
     },
