@@ -18,6 +18,16 @@
       "homepage": "https://github.com/mrkhachaturov/claude-audit-plugin"
     },
     {
+      "name": "openai-codex",
+      "description": "Use Codex from Claude Code to review code or delegate tasks.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/openai/codex-plugin-cc.git"
+      },
+      "homepage": "https://github.com/openai/codex-plugin-cc"
+    },
+    {
       "name": "rkstack",
       "description": "AI development workflow: 21 skills for brainstorming, planning, TDD, debugging, code review, security audit, safety guardrails. One plugin, adapts to your project.",
       "category": "development",
