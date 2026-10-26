@@ -479,7 +479,7 @@
         "url": "https://github.com/aws/agent-toolkit-for-aws.git",
         "path": "plugins/aws-startup-advisor",
         "ref": "main",
-        "sha": "613dc216a1cf0836b81a28d7f3a81f2b72034394"
+        "sha": "b310d1c46b4ced6423a737542c92a3a22cfe9e96"
       },
       "homepage": "https://github.com/aws/agent-toolkit-for-aws"
     },
@@ -1314,7 +1314,7 @@
         "url": "https://github.com/databricks/databricks-agent-skills.git",
         "path": "plugins/databricks/claude",
         "ref": "main",
-        "sha": "e77e37e8a4dabbe2662b680c180bb72a05eca48d"
+        "sha": "c1964266c7aa6063d89036691d0594420ffa0129"
       },
       "homepage": "https://developers.databricks.com/"
     },
@@ -3367,7 +3367,7 @@
         "url": "https://github.com/forcedotcom/sf-skills.git",
         "path": "plugins/builder/salesforce-development",
         "ref": "main",
-        "sha": "3c15867bdb9dacd515960174c661c706d041bb63"
+        "sha": "d3088edf8776a3c23f55aadead587eb3903be2d3"
       },
       "homepage": "https://github.com/forcedotcom/sf-skills/tree/main/plugins/builder/salesforce-development"
     },
@@ -3485,7 +3485,7 @@
     {
       "name": "security-guidance",
       "description": "Security review for Claude-generated code. Pattern-based warnings on edits, LLM-powered diff review on Stop, and an agentic commit reviewer that catches injection, XSS, SSRF, hardcoded secrets, and 25+ other vulnerability classes.",
-      "version": "2.0.14",
+      "version": "2.0.16",
       "author": {
         "name": "Anthropic",
         "email": "support@anthropic.com"
@@ -3786,7 +3786,7 @@
         "url": "https://github.com/stripe/ai.git",
         "path": "providers/claude/plugin",
         "ref": "main",
-        "sha": "97b2164821c378f246c3903852057b36a8bd0296"
+        "sha": "deae744bc0cbf6034b4b6f22f51c690b71a4e779"
       },
       "homepage": "https://github.com/stripe/ai/tree/main/providers/claude/plugin"
     },
