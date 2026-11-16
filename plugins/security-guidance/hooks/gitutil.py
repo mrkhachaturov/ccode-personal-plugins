@@ -18,6 +18,7 @@ import contextlib
 import errno
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -110,6 +111,7 @@ SAFE_GIT_CONFIG = (
     ("diff.ignoreSubmodules", "all"),
     ("diff.submodule", "short"),
     ("log.showSignature", "false"),
+    ("safe.bareRepository", "explicit"),
 )
 
 # The hook's git runs in the background beside the session's own git. Without
@@ -963,6 +965,50 @@ def _drop_gitlinks(top, env, tmp_index):
         return False
 
 
+def _looks_like_git_dir(path):
+    """git's own test for a repository directory, near enough: objects and refs
+    it can enter, and a HEAD that is a link into refs/ or a file holding a ref
+    or a SHA. Anything else named HEAD stays unopened: a named pipe would block."""
+    # With a commondir file, objects and refs are in the folder that it names.
+    if not (os.path.lexists(os.path.join(path, "commondir"))
+            or ((os.access(os.path.join(path, "objects"), os.X_OK)
+                 or os.environ.get("GIT_OBJECT_DIRECTORY"))
+                and os.access(os.path.join(path, "refs"), os.X_OK))):
+        return False
+    head_path = os.path.join(path, "HEAD")
+    try:
+        mode = os.lstat(head_path).st_mode
+        if stat.S_ISLNK(mode):
+            return os.readlink(head_path).startswith("refs/")  # git does not follow it
+        if not stat.S_ISREG(mode):
+            return False
+        with open(head_path, "rb") as f:
+            head = f.read(64)
+    except OSError:
+        return False
+    return bool(re.match(rb"ref:\s*refs/|[0-9a-fA-F]{40}", head))
+
+
+def _found_through_bare_folder(cwd):
+    """True when git, searching up from `cwd`, would take a folder with no
+    `.git` entry for the repository. Git versions before 2.38 have no
+    safe.bareRepository, so this is what keeps them to ordinary checkouts.
+    A repository the caller named through the environment is not searched for."""
+    if os.environ.get("GIT_DIR"):
+        return False
+    d = os.path.realpath(cwd or os.curdir)
+    while True:
+        entry = os.path.join(d, ".git")
+        if os.path.isfile(entry) or _looks_like_git_dir(entry):
+            return False  # git passes over an empty `.git` folder or a broken link
+        if _looks_like_git_dir(d):
+            return os.path.basename(d) != ".git"
+        parent = os.path.dirname(d)
+        if parent == d:
+            return False
+        d = parent
+
+
 def _git_toplevel(cwd):
     """Absolute repo root for `cwd`, or None if not in a work tree."""
     try:
@@ -976,7 +1022,7 @@ def _git_toplevel(cwd):
         if r.returncode != 0:
             return None
         path = r.stdout.decode("utf-8", errors="replace").strip()
-        return path if path else None
+        return path if path and not _found_through_bare_folder(cwd) else None
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return None
 
@@ -995,7 +1041,10 @@ def _git_toplevel_and_head(cwd):
         return None, None
     # See #2099: the first line is a PATH, so decode the bytes manually.
     top, _, head = r.stdout.decode("utf-8", errors="replace").strip().rpartition("\n")
-    return (top.strip() or None), (head.strip() or None)
+    top = top.strip()
+    if not top or _found_through_bare_folder(cwd):
+        return None, None
+    return top, (head.strip() or None)
 
 
 def _git_head_at(cwd, epoch):
@@ -1026,6 +1075,8 @@ def _git_dir(repo_root):
     if a different worktree later pushes it. Returns None on failure so
     callers can degrade (push-sweep state is best-effort).
     """
+    if _found_through_bare_folder(repo_root):
+        return None
     try:
         # See #2099: stdout is a PATH (shared gitdir), may be non-ASCII.
         # Decode bytes manually to avoid cp1252 reader-thread crash.
@@ -1047,7 +1098,7 @@ def _git_rev_list_range(repo_root, base, head="HEAD"):
         # See #2099: stdout is ASCII SHAs, but stderr can carry git error
         # messages referencing non-ASCII filenames — keep bytes raw.
         r = subprocess.run(
-            [*GIT_CMD, "rev-list", "--reverse", f"{base}..{head}"],
+            [*GIT_CMD, "rev-list", "--reverse", "--topo-order", f"{base}..{head}"],
             cwd=repo_root, capture_output=True, timeout=10,
         )
         if r.returncode != 0:
@@ -1055,6 +1106,59 @@ def _git_rev_list_range(repo_root, base, head="HEAD"):
         return [s for s in r.stdout.decode("utf-8", errors="replace").strip().split("\n") if s]
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return []
+
+
+def _git_range_parents(repo_root, base, head="HEAD"):
+    """{sha: [parent shas, first parent first]} for `base..head`.
+
+    Empty on error: the caller then treats the range as linear, which reviews
+    more, never less.
+    """
+    try:
+        r = subprocess.run(
+            [*GIT_CMD, "rev-list", "--parents", f"{base}..{head}"],
+            cwd=repo_root, capture_output=True, timeout=10,
+        )
+        if r.returncode != 0:
+            return {}
+        rows = [line.split() for line in r.stdout.decode("utf-8", errors="replace").splitlines()]
+        return {row[0]: row[1:] for row in rows if row}
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return {}
+
+
+def _git_merge_resolved_files(repo_root, merge_sha):
+    """(path, combined-diff hunks) for each source file a merge changed itself,
+    or None on error.
+
+    The combined diff shows only lines that match none of the merge's parents:
+    conflict resolutions and hand edits. A clean merge has none, and neither
+    does a conflict settled by taking one side whole.
+    """
+    try:
+        r = subprocess.run(
+            [*GIT_CMD, "diff-tree", "--cc", "-M", "--no-commit-id", "-r", "--no-color",
+             "--no-ext-diff", "--no-textconv", merge_sha],
+            cwd=repo_root, capture_output=True, timeout=30,
+        )
+        if r.returncode != 0:
+            return None
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return None
+    files = []
+    # Hunk lines start with one marker column per parent, so only a file
+    # header starts with "diff --cc " in the first column.
+    text = r.stdout.decode("utf-8", errors="replace")
+    for section in re.split(r"^diff --cc ", text, flags=re.M)[1:]:
+        header, _, body = section.partition("\n")
+        path = header
+        if header.startswith('"'):
+            quoted = _read_quoted_path(header, 0)
+            path = quoted[0] if quoted else None
+        at = body.find("@@@")
+        if path and at >= 0 and _section_is_reviewable(path, path):
+            files.append((path, body[at:].rstrip("\n")))
+    return files
 
 
 def _git_diff_range(repo_root, base, head="HEAD"):
@@ -1095,6 +1199,51 @@ def _detect_main_branch(repo_root):
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             pass
     return None
+
+
+# Commits turn_commit_shas reads.
+TURN_COMMITS_MAX = 100
+
+
+def turn_commit_shas(repo_root, since, until, head_before=None):
+    """SHAs that `git commit` made in this checkout from `since` to `until`
+    (epoch seconds), newest first, from its HEAD reflog. None when git cannot
+    say. Not merges, picks, reverts or rebases: no review hook waits for
+    those.
+
+    Goes by the time of the reflog entry, so checking out or pulling
+    somebody's recent commit does not count as making one (a commit made
+    with GIT_COMMITTER_DATE set is dated by that). Those times are whole
+    seconds; `head_before`, what HEAD was at `since`, leaves out the commits
+    made earlier in that second."""
+    try:
+        # --date=unix makes %gd `HEAD@{<seconds>}`; %gs is free text, so last.
+        r = subprocess.run(
+            [*GIT_CMD, "log", "-g", "--no-show-signature", "--date=unix",
+             "--basic-regexp", "--grep-reflog=^commit", "-n", str(TURN_COMMITS_MAX),
+             "--format=%H %gd %gs", "HEAD", "--"],
+            cwd=repo_root, capture_output=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
+        return None
+    if r.returncode != 0:
+        # A repository without a commit has nothing to count.
+        return None if _git_rev_parse_head(repo_root) or not _git_toplevel(repo_root) else []
+    since = int(since)
+    entries = []
+    for line in r.stdout.decode("utf-8", errors="replace").splitlines():
+        # 40 digits only: the reviewed record knows no SHA-256 ids.
+        m = re.match(r"([0-9a-f]{40}) HEAD@\{(\d+)\} commit(?! \((?:merge|cherry-pick)\))", line)
+        if m and since <= int(m.group(2)) <= until:
+            entries.append((m.group(1), int(m.group(2))))
+    # Oldest match, as the turn itself can come back to where it started.
+    for i in range(len(entries) - 1, -1, -1):
+        if entries[i][1] > since:
+            break
+        if entries[i][0] == head_before:
+            del entries[i:]
+            break
+    return list(dict.fromkeys(sha for sha, _ in entries))
 
 
 def _git_reflog_recent_commits(repo_root, max_age_s=120, max_n=5):
